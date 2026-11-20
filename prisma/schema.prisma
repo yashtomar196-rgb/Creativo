@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Note: SQLite doesn't support native enum types, so AdminUser.role and
+// .status are plain Strings. Valid values are enforced in the API routes:
+//   role:   "SUPER_ADMIN" | "ADMIN" | "ORDER_MANAGER" | "PRODUCT_MANAGER"
+//   status: "ACTIVE" | "DISABLED"
+
+model AdminUser {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         String
+  status       String      @default("ACTIVE")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  phone        String?
+  createdAt    DateTime  @default(now())
+  orders       Order[]
+  reviews      Review[]
+}
+
+model Product {
+  id           String      @id @default(cuid())
+  name         String
+  category     String
+  price        Int
+  mrp          Int
+  stock        Int         @default(100)
+  rating       Float       @default(5)
+  reviewsCount Int         @default(0)
+  badges       String      @default("[]")
+  img          String
+  img2         String?
+  description  String      @default("")
+  variants     String      @default("[]")
+  customizable Boolean     @default(false)
+  specs        String      @default("[]")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  reviews      Review[]
+  orderItems   OrderItem[]
+}
+
+model Order {
+  id           String      @id
+  customer     Customer?   @relation(fields: [customerId], references: [id])
+  customerId   String?
+  customerName String
+  email        String
+  phone        String?
+  address      String?
+  items        OrderItem[]
+  subtotal     Int
+  shipping     Int         @default(0)
+  total        Int
+  payment      String      @default("Pending")
+  status       String      @default("Pending")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String
+  product    Product? @relation(fields: [productId], references: [id])
+  productId  String?
+  name       String
+  variant    String?
+  qty        Int
+  price      Int
+  customText String?
+  customMsg  String?
+  fileUrl    String?
+  fileName   String?
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  customerId  String?
+  name        String
+  rating      Int
+  text        String
+  photoUrl    String?
+  status      String    @default("pending")
+  product     Product?  @relation(fields: [productId], references: [id])
+  productId   String?
+  productName String?
+  createdAt   DateTime  @default(now())
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  company   String?
+  email     String
+  phone     String
+  eventType String
+  interests String   @default("[]")
+  qty       String
+  message   String?
+  status    String   @default("New")
+  createdAt DateTime @default(now())
+}
